@@ -1,0 +1,49 @@
+collision_sensors:
+  - name: front
+    id: 30
+    topic_name: ""
+    i2c_bus: 1
+    mode: 3
+    timing_budget: 0.1
+    offset: 0.0
+    frame_id: ""
+    min_range: 0.0
+    max_range: 4.0
+    xshut_gpio_chip: 0
+    xshut_gpio_line: 15
+  - name: rear
+    id: 31
+    topic_name: ""
+    i2c_bus: 1
+    mode: 3
+    timing_budget: 0.1
+    offset: 0.0
+    frame_id: ""
+    min_range: 0.0
+    max_range: 4.0
+    xshut_gpio_chip: 0
+    xshut_gpio: 15
+  - name: right
+    id: 32
+    topic_name:
+    i2c_bus: 1
+    mode: 3
+    timing_budget: 0.1
+    offset: 0.0
+    frame_id: ""
+    min_range: 0.0
+    max_range: 4.0
+    xshut_gpio_chip: 0
+    xshut_gpio: 15
+  - name: left
+    id: 33
+    topic_name: ""
+    i2c_bus: 1
+    mode: 3
+    timing_budget: 0.1
+    offset: 0.0
+    frame_id: ""
+    min_range: 0.0
+    max_range: 4.0
+    xshut_gpio: 15
+    xshut_gpio_chip: 0

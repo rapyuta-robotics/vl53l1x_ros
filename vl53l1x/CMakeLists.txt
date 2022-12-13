@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -105,7 +105,8 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES vl53l1x
  CATKIN_DEPENDS message_runtime
-#  DEPENDS system_lib
+ DEPENDS
+ Boost
 )
 
 ###########
@@ -139,7 +140,7 @@ FILE(GLOB vl53l1x_platform lib/platform/*.c)
 
 add_executable(${PROJECT_NAME}_node
   src/vl53l1x.cpp
-  src/i2c.cpp
+  src/vl53l1x_node.cpp
   ${vl53l1x_core}
   ${vl53l1x_platform}
 )
@@ -159,6 +160,8 @@ add_dependencies(${PROJECT_NAME}_node ${PROJECT_NAME}_generate_messages_cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
+  -lgpiod
+  -lsoc
 )
 
 #############
