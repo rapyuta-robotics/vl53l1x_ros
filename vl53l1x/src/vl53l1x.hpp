@@ -2,12 +2,14 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include <ros/ros.h>
 #include <sensor_msgs/Range.h>
 #include <vl53l1x/MeasurementData.h>
 
 #include "vl53l1_api.h"
+#include <gpiod.h>
 
 #define xSTR(x) #x
 #define STR(x) xSTR(x)
@@ -24,7 +26,8 @@ const uint8_t VL53L1_DEFAULT_ADDR = 0x29;
 
 class Vl53l1x {
 public:
-    Vl53l1x(ros::NodeHandle nh, int i2c_bus, int addr, std::string frame_id);
+    Vl53l1x(ros::NodeHandle nh, int i2c_bus, int addr, std::string frame_id, std::mutex* mtx,
+            struct gpiod_line* io_line);
     ~Vl53l1x();
 
     void init();
@@ -56,6 +59,9 @@ private:
     VL53L1_Error _sensor_error;
     VL53L1_DeviceInfo_t _device_info;
     VL53L1_RangingMeasurementData_t _measurement_data;
+
+    std::mutex* _mtx;
+    struct gpiod_line* _io_line;
 
     // ref: https://qiita.com/srs/items/4a658522a7f5dea5b83f
 };

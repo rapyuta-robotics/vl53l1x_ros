@@ -14,10 +14,13 @@
 
 #include "vl53l1x.hpp"
 
-Vl53l1x::Vl53l1x(ros::NodeHandle nh, int i2c_bus, int addr, std::string frame_id) {
+Vl53l1x::Vl53l1x(
+        ros::NodeHandle nh, int i2c_bus, int addr, std::string frame_id, std::mutex* mtx, struct gpiod_line* io_line) {
     _sensor_dev.i2c_bus = libsoc_i2c_init(i2c_bus, addr);
     _frame_id = frame_id;
     _nh = nh;
+    _mtx = mtx;
+    _io_line = io_line;
 
     ros::NodeHandle pnh("~");
     pnh.param("mode", _mode, 3);
@@ -94,12 +97,18 @@ void Vl53l1x::measureAndPublishTask() {
     ros::Rate r(_poll_rate);
 
     while (ros::ok()) {
+        ros::spinOnce();
         r.sleep();
         _range_msg.header.stamp = ros::Time::now();
+        std::lock_guard<std::mutex> lock(*_mtx);
+        gpiod_line_set_value(_io_line, 1);
+        usleep(500);
 
         // Check the data is ready
         VL53L1_GetMeasurementDataReady(&_sensor_dev, &_data_ready);
         if (!_data_ready) {
+            gpiod_line_set_value(_io_line, 0);
+            usleep(500);
             continue;
         }
 
@@ -123,6 +132,8 @@ void Vl53l1x::measureAndPublishTask() {
             VL53L1_get_range_status_string(_measurement_data.RangeStatus, range_status);
             ROS_DEBUG("Range measurement status is not valid: %s", range_status);
             ros::spinOnce();
+            gpiod_line_set_value(_io_line, 0);
+            usleep(500);
             continue;
         }
 
@@ -130,7 +141,8 @@ void Vl53l1x::measureAndPublishTask() {
         _range_msg.range = _measurement_data.RangeMilliMeter / 1000.0 + _offset;
         range_pub.publish(_range_msg);
 
-        ros::spinOnce();
+        gpiod_line_set_value(_io_line, 0);
+        usleep(500);
     }
 
     // Release

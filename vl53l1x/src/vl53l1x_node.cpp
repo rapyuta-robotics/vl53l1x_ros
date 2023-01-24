@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <ros/ros.h>
+#include <mutex>
 
 #include <gpiod.h>
 #include <libsoc_i2c.h>
@@ -30,6 +31,7 @@ int main(int argc, char** argv) {
     int xshut_gpio_chip, i2c_bus, new_addr_index;
     struct gpiod_chip* gpio_chip;  // assumption: all the gpio lines are part of on gpio chip
     struct gpiod_line* io_line[4];
+    std::mutex mtx;
 
     std::string sensor_frame_ids[4] = {
             "distance_sensor_right", "distance_sensor_left", "distance_sensor_front", "distance_sensor_rear"};
@@ -58,7 +60,7 @@ int main(int argc, char** argv) {
 
     std::vector<Vl53l1x*> sensors;
     for (int i = 0; i < 4; i++) {
-        sensors.emplace_back(new Vl53l1x(nh, i2c_bus, new_addr_index + i, sensor_frame_ids[i]));
+        sensors.emplace_back(new Vl53l1x(nh, i2c_bus, new_addr_index + i, sensor_frame_ids[i], &mtx, io_line[i]));
     }
 
     for (auto sensor : sensors) {
