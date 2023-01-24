@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
             VL53L1_software_reset(&sensor_dev[i]);
             VL53L1_WaitDeviceBooted(&sensor_dev[i]);
             VL53L1_SetDeviceAddress(&sensor_dev[i], ((new_addr_index + i) << 1));
+            gpiod_line_set_value(io_line[i], 0);
         }
         libsoc_i2c_free(i2c);  // rlease the temporary i2c instance
     }

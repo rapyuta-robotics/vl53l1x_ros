@@ -63,5 +63,7 @@ private:
     std::mutex* _mtx;
     struct gpiod_line* _io_line;
 
+    void setEnable(uint8_t enable);
+
     // ref: https://qiita.com/srs/items/4a658522a7f5dea5b83f
 };

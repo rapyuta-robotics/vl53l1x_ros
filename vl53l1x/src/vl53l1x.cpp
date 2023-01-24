@@ -55,6 +55,8 @@ void Vl53l1x::configure(){};
 
 void Vl53l1x::sensor_prep() {
     // cnfiguration and verification
+    std::lock_guard<std::mutex> lock(*_mtx);
+    setEnable(1);
     VL53L1_DataInit(&_sensor_dev);
     VL53L1_StaticInit(&_sensor_dev);
     VL53L1_SetPresetMode(&_sensor_dev, VL53L1_PRESETMODE_AUTONOMOUS);
@@ -83,6 +85,8 @@ void Vl53l1x::sensor_prep() {
             break;
     }
 
+    setEnable(0);
+
     // Check for errors after start
     if (_sensor_error != VL53L1_ERROR_NONE) {
         ROS_FATAL("VL53L1X: Can't start measurement: error %d", _sensor_error);
@@ -101,14 +105,12 @@ void Vl53l1x::measureAndPublishTask() {
         r.sleep();
         _range_msg.header.stamp = ros::Time::now();
         std::lock_guard<std::mutex> lock(*_mtx);
-        gpiod_line_set_value(_io_line, 1);
-        usleep(500);
+        setEnable(1);
 
         // Check the data is ready
         VL53L1_GetMeasurementDataReady(&_sensor_dev, &_data_ready);
         if (!_data_ready) {
-            gpiod_line_set_value(_io_line, 0);
-            usleep(500);
+            setEnable(0);
             continue;
         }
 
@@ -132,8 +134,7 @@ void Vl53l1x::measureAndPublishTask() {
             VL53L1_get_range_status_string(_measurement_data.RangeStatus, range_status);
             ROS_DEBUG("Range measurement status is not valid: %s", range_status);
             ros::spinOnce();
-            gpiod_line_set_value(_io_line, 0);
-            usleep(500);
+            setEnable(0);
             continue;
         }
 
@@ -141,11 +142,15 @@ void Vl53l1x::measureAndPublishTask() {
         _range_msg.range = _measurement_data.RangeMilliMeter / 1000.0 + _offset;
         range_pub.publish(_range_msg);
 
-        gpiod_line_set_value(_io_line, 0);
-        usleep(500);
+        setEnable(0);
     }
 
     // Release
     ROS_INFO("VL53L1X: stop ranging");
     VL53L1_StopMeasurement(&_sensor_dev);
+};
+
+void Vl53l1x::setEnable(uint8_t enable) {
+    gpiod_line_set_value(_io_line, enable);
+    usleep(500);
 };
