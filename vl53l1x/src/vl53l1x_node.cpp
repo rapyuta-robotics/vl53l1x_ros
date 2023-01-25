@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
         i2c* i2c = libsoc_i2c_init(i2c_bus, VL53L1_DEFAULT_ADDR);
         VL53L1_Dev_t sensor_dev[4];
         for (int i = 0; i < 4; i++) {
+            sensor_dev[i].i2c_bus = i2c;
             gpiod_line_set_value(io_line[i], 1);
             VL53L1_software_reset(&sensor_dev[i]);
             VL53L1_WaitDeviceBooted(&sensor_dev[i]);
