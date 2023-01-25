@@ -55,7 +55,6 @@ void Vl53l1x::configure(){};
 
 void Vl53l1x::sensor_prep() {
     // cnfiguration and verification
-    std::lock_guard<std::mutex> lock(*_mtx);
     setEnable(1);
     VL53L1_DataInit(&_sensor_dev);
     VL53L1_StaticInit(&_sensor_dev);
@@ -104,19 +103,20 @@ void Vl53l1x::measureAndPublishTask() {
         ros::spinOnce();
         r.sleep();
         _range_msg.header.stamp = ros::Time::now();
-        std::lock_guard<std::mutex> lock(*_mtx);
-        setEnable(1);
 
         // Check the data is ready
+        setEnable(1);
         VL53L1_GetMeasurementDataReady(&_sensor_dev, &_data_ready);
+        setEnable(0);
         if (!_data_ready) {
-            setEnable(0);
             continue;
         }
 
         // Read measurement
+        setEnable(1);
         VL53L1_GetRangingMeasurementData(&_sensor_dev, &_measurement_data);
         VL53L1_ClearInterruptAndStartMeasurement(&_sensor_dev);
+        setEnable(0);
 
         // Publish measurement data
         _data_msg.header.stamp = _range_msg.header.stamp;
@@ -131,18 +131,17 @@ void Vl53l1x::measureAndPublishTask() {
         if (!_ignore_range_status && std::find(_pass_statuses.begin(), _pass_statuses.end(),
                                              _measurement_data.RangeStatus) == _pass_statuses.end()) {
             char range_status[VL53L1_MAX_STRING_LENGTH];
+            setEnable(1);
             VL53L1_get_range_status_string(_measurement_data.RangeStatus, range_status);
+            setEnable(0);
             ROS_DEBUG("Range measurement status is not valid: %s", range_status);
             ros::spinOnce();
-            setEnable(0);
             continue;
         }
 
         // Publish measurement
         _range_msg.range = _measurement_data.RangeMilliMeter / 1000.0 + _offset;
         range_pub.publish(_range_msg);
-
-        setEnable(0);
     }
 
     // Release
@@ -151,6 +150,12 @@ void Vl53l1x::measureAndPublishTask() {
 };
 
 void Vl53l1x::setEnable(uint8_t enable) {
+    if (enable == 1) {
+        _mtx->lock();
+    }
     gpiod_line_set_value(_io_line, enable);
-    usleep(500);
+    usleep(100);
+    if (enable == 0) {
+        _mtx->unlock();
+    }
 };
