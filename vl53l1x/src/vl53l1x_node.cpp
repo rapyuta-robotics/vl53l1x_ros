@@ -27,22 +27,30 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "vl53l1x");
     ros::NodeHandle nh, nh_priv("~");
 
-    uint8_t xshut_pins[4] = {14, 15, 24, 27};
+    uint8_t xshut_pins[4] = {4, 5, 6, 7};
+    uint8_t power_pins = 13;
     int xshut_gpio_chip, i2c_bus, new_addr_index;
     struct gpiod_chip* gpio_chip;  // assumption: all the gpio lines are part of on gpio chip
+    struct gpiod_line* power_line;
     struct gpiod_line* io_line[4];
     std::mutex mtx;
 
     std::string sensor_frame_ids[4] = {
             "distance_sensor_front", "distance_sensor_rear", "distance_sensor_left", "distance_sensor_right"};
 
-    nh_priv.param("i2c_bus", i2c_bus, 1);
+    nh_priv.param("i2c_bus", i2c_bus, 3);
     nh_priv.param("xshut_gpio_chip", xshut_gpio_chip, 0);
     nh_priv.param("new_addr_index", new_addr_index, 0x30);
 
     // Sequence for writing new slave address to the sensor(s)
     {
         gpio_chip = gpiod_chip_open_by_number(xshut_gpio_chip);
+
+        power_line = gpiod_chip_get_line(gpio_chip, power_pins);
+        gpiod_line_request_output(power_line, "vl53l1x", 0);
+        usleep(5000);
+        gpiod_line_set_value(power_line, 1);
+
         for (int i = 0; i < 4; i++) {
             io_line[i] = gpiod_chip_get_line(gpio_chip, xshut_pins[i]);
             gpiod_line_request_output(io_line[i], "vl53l1x", 0);
