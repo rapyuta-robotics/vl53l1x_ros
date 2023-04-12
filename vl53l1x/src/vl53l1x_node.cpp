@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     std::string sensor_frame_ids[4] = {
             "distance_sensor_front", "distance_sensor_rear", "distance_sensor_left", "distance_sensor_right"};
 
-    nh_priv.param("i2c_bus", i2c_bus, 3);
+    nh_priv.param("i2c_bus", i2c_bus, 6);
     nh_priv.param("xshut_gpio_chip", xshut_gpio_chip, 0);
     nh_priv.param("new_addr_index", new_addr_index, 0x30);
 
