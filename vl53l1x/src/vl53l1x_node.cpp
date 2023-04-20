@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
             "distance_sensor_front", "distance_sensor_rear", "distance_sensor_left", "distance_sensor_right"};
 
     nh_priv.param("i2c_bus", i2c_bus, 1);
-    nh_priv.param("xshut_gpio_chip", xshut_gpio_chip, 0);
+    nh_priv.param("xshut_gpio_chip", xshut_gpio_chip, 3);
     nh_priv.param("new_addr_index", new_addr_index, 0x30);
 
     // Sequence for writing new slave address to the sensor(s)
@@ -47,15 +47,13 @@ int main(int argc, char** argv) {
         gpio_chip = gpiod_chip_open_by_number(xshut_gpio_chip);
 
         power_line = gpiod_chip_get_line(gpio_chip, power_pins);
-        gpiod_line_request_output(power_line, "vl53l1x", 0);
+        gpiod_line_request_output(power_line, "vl53l1x", 1);
         usleep(5000);
-        gpiod_line_set_value(power_line, 1);
 
         for (int i = 0; i < 4; i++) {
             io_line[i] = gpiod_chip_get_line(gpio_chip, xshut_pins[i]);
             gpiod_line_request_output(io_line[i], "vl53l1x", 0);
             usleep(5000);
-            gpiod_line_set_value(io_line[i], 0);
         }
         gpiod_line_set_value(io_line[0], 1);
         i2c* i2c = libsoc_i2c_init(i2c_bus, VL53L1_DEFAULT_ADDR);
